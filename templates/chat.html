@@ -1,36 +1,58 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
     <title>Chat</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="chat-container">
-        <div class="messages" id="messages">
+    <div id="chat-container">
+        <div id="messages">
             {% for message in messages %}
-                <div class="message {{ 'own-message' if message.user == username else 'other-message' }}">
-                    <strong>{{ message.user }}:</strong> {{ message.text }}
-                </div>
+                {% if message.type == 'text' %}
+                    <p><strong>{{ message.user }}:</strong> {{ message.text }}</p>
+                {% elif message.type == 'file' %}
+                    <p><strong>{{ message.user }}:</strong> <a href="{{ url_for('uploaded_file', filename=message.file) }}" target="_blank">{{ message.file }}</a></p>
+                {% endif %}
             {% endfor %}
         </div>
-        <form id="messageForm">
-            <input type="text" id="message" placeholder="Type a message..." required>
-            <button type="submit">Send</button>
+        <form id="message-form" method="POST" action="{{ url_for('chat') }}">
+            <input type="text" id="message" autocomplete="off">
+            <button>Send</button>
         </form>
-    </div>
-    <div class="settings">
-        <form action="/settings" method="post">
-            <label for="theme">Choose Theme:</label>
-            <select name="theme" id="theme">
-                <option value="default">Default</option>
-                <option value="dark">Dark</option>
-                <option value="light">Light</option>
-            </select>
-            <button type="submit">Save Settings</button>
+        <form id="file-form" method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+            <input type="file" name="file">
+            <button>Upload</button>
         </form>
     </div>
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
-    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+    <script>
+        var socket = io();
+        var messages = document.getElementById('messages');
+        var form = document.getElementById('message-form');
+        var input = document.getElementById('message');
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (input.value) {
+                socket.emit('message', input.value);
+                input.value = '';
+            }
+        });
+
+        socket.on('message', function(msg) {
+            var item = document.createElement('p');
+            if (msg.type == 'text') {
+                item.textContent = msg.user + ': ' + msg.text;
+            } else if (msg.type == 'file') {
+                var link = document.createElement('a');
+                link.href = '/uploads/' + msg.file;
+                link.target = '_blank';
+                link.textContent = msg.file;
+                item.appendChild(link);
+            }
+            messages.appendChild(item);
+            window.scrollTo(0, document.body.scrollHeight);
+        });
+    </script>
 </body>
 </html>
