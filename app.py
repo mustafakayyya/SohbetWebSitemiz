@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, session
+from flask_socketio import SocketIO, send, emit
 import json
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
+socketio = SocketIO(app)
 
 # Kullanıcı verileri
 users = {
@@ -34,11 +36,6 @@ def chat():
     if 'username' not in session:
         return redirect(url_for('login'))
     username = session['username']
-    if request.method == 'POST':
-        message = request.form['message']
-        data['messages'].append({'user': username, 'text': message})
-        with open('data.json', 'w') as f:
-            json.dump(data, f)
     return render_template('chat.html', messages=data['messages'], username=username)
 
 @app.route('/settings', methods=['POST'])
@@ -52,5 +49,13 @@ def settings():
         json.dump(data, f)
     return redirect(url_for('chat'))
 
+@socketio.on('message')
+def handle_message(msg):
+    username = session['username']
+    data['messages'].append({'user': username, 'text': msg})
+    with open('data.json', 'w') as f:
+        json.dump(data, f)
+    send({'user': username, 'text': msg}, broadcast=True)
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    socketio.run(app, debug=True)
