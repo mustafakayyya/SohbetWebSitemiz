@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="messages">
+            {% for message in messages %}
+                <div class="message {{ 'own-message' if message.user == username else 'other-message' }}">
+                    <strong>{{ message.user }}:</strong> {{ message.text }}
+                </div>
+            {% endfor %}
+        </div>
+        <form action="/chat" method="post">
+            <input type="text" name="message" placeholder="Type a message..." required>
+            <button type="submit">Send</button>
+        </form>
+    </div>
+    <div class="settings">
+        <form action="/settings" method="post">
+            <label for="theme">Choose Theme:</label>
+            <select name="theme" id="theme">
+                <option value="default">Default</option>
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+            </select>
+            <button type="submit">Save Settings</button>
+        </form>
+    </div>
+</body>
+<script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+</html>
